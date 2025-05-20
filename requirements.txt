@@ -1,0 +1,5 @@
+langchain
+langchain-community
+pandas
+langchain_experimental
+tabulate
