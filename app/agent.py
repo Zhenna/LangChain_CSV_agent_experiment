@@ -7,7 +7,8 @@ from langchain_experimental.tools.python.tool import PythonAstREPLTool
 from langchain.agents import initialize_agent, AgentExecutor
 from langchain.agents.agent_types import AgentType
 
-csv_file = "data/wide_to_long_inverters_processed.csv" #"data/wide_to_long_inverters.csv"
+csv_file = "data/combiner_box_preprocessed.csv"
+# csv_file = "data/wide_to_long_inverters_processed.csv" #"data/wide_to_long_inverters.csv"
 df = pd.read_csv(csv_file)
 
 def describe_column(col):
@@ -18,16 +19,23 @@ def describe_column(col):
 
 column_descriptions = "\n".join(describe_column(col) for col in df.columns)
 
+
 context = f"""
 You are a data analyst working on `{csv_file}`.
 The dataset contains the following columns:\n{column_descriptions}
-To compare values across inverters within a specific time range, 
-you can aggregate by Inverter_ID and the appropriate time period, 
-after converting the timestamp column to datetime format first.
-Use this information to answer questions clearly. 
-
+se this information to answer questions clearly. 
 Avoid code in your answers.
 """
+
+# context = f"""
+# You are a data analyst working on `{csv_file}`.
+# The dataset contains the following columns:\n{column_descriptions}
+# To compare values across inverters within a specific time range, 
+# you can aggregate by Inverter_ID and the appropriate time period, 
+# after converting the timestamp column to datetime format first.
+# Use this information to answer questions clearly. 
+# Avoid code in your answers.
+# """
 
 
 # Step 1: LLM
