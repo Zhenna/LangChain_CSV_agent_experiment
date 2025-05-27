@@ -23,7 +23,8 @@ column_descriptions = "\n".join(describe_column(col) for col in df.columns)
 context = f"""
 You are a data analyst working on `{csv_file}`.
 The dataset contains the following columns:\n{column_descriptions}
-se this information to answer questions clearly. 
+It is the DC current for each combiner box that is attached to one inverter.
+Use this information to answer questions clearly. 
 Avoid code in your answers.
 """
 
