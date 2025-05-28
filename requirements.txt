@@ -4,3 +4,5 @@ langchain-ollama
 pandas
 langchain_experimental
 tabulate
+openpyxl
+pyarrow

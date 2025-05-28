@@ -7,7 +7,8 @@ from langchain_experimental.tools.python.tool import PythonAstREPLTool
 from langchain.agents import initialize_agent, AgentExecutor
 from langchain.agents.agent_types import AgentType
 
-csv_file = "data/combiner_box_preprocessed.csv"
+csv_file = "data/weather_data_by_inverter_preprocessed.csv"
+# csv_file = "data/combiner_box_preprocessed.csv"
 # csv_file = "data/wide_to_long_inverters_processed.csv" #"data/wide_to_long_inverters.csv"
 df = pd.read_csv(csv_file)
 
@@ -19,14 +20,25 @@ def describe_column(col):
 
 column_descriptions = "\n".join(describe_column(col) for col in df.columns)
 
-
 context = f"""
 You are a data analyst working on `{csv_file}`.
 The dataset contains the following columns:\n{column_descriptions}
-It is the DC current for each combiner box that is attached to one inverter.
+It is the weather data for each inverter over a period of days.
+When a time period is given, filter by values in 'Date' column.
 Use this information to answer questions clearly. 
 Avoid code in your answers.
 """
+
+
+# context = f"""
+# You are a data analyst working on `{csv_file}`.
+# The dataset contains the following columns:\n{column_descriptions}
+# It is the DC current for each combiner box that is attached to one inverter.
+# The values in device_name column represents different combiner boxes and 
+# the inverter_id represents the inverters attached to the combiner boxes. 
+# Use this information to answer questions clearly. 
+# Avoid code in your answers.
+# """
 
 # context = f"""
 # You are a data analyst working on `{csv_file}`.
@@ -51,6 +63,7 @@ agent = initialize_agent(
     llm=llm,
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
+    handle_parsing_errors=True
     allow_dangerous_code=True,
     max_iterations=15,
     max_execution_time=60
