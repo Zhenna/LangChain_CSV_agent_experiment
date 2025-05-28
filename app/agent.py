@@ -1,15 +1,14 @@
 import pandas as pd
 from langchain_ollama import OllamaLLM
-# from langchain_experimental.tools import PandasDataFrameTool
-# from langchain.tools.python import PythonREPLTool
-# from langchain.tools.python import PythonAstREPLTool
 from langchain_experimental.tools.python.tool import PythonAstREPLTool
 from langchain.agents import initialize_agent, AgentExecutor
 from langchain.agents.agent_types import AgentType
 
-csv_file = "data/weather_data_by_inverter_preprocessed.csv"
-# csv_file = "data/combiner_box_preprocessed.csv"
-# csv_file = "data/wide_to_long_inverters_processed.csv" #"data/wide_to_long_inverters.csv"
+
+# from pathlib import Path
+# csv_file = Path("data") / "wide_to_long_inverters_processed.csv"
+
+csv_file = "data/wide_to_long_inverters_processed.csv" 
 df = pd.read_csv(csv_file)
 
 def describe_column(col):
@@ -20,42 +19,49 @@ def describe_column(col):
 
 column_descriptions = "\n".join(describe_column(col) for col in df.columns)
 
+tool_name = "python_repl_ast"
+
 context = f"""
 You are a data analyst working on `{csv_file}`.
 The dataset contains the following columns:\n{column_descriptions}
-It is the weather data for each inverter over a period of days.
-When a time period is given, filter by values in 'Date' column.
-Use this information to answer questions clearly. 
-Avoid code in your answers.
+
+Use the tool `{tool_name}` to perform all Python code execution. 
+Do **not** use tools named 'filter', 'transform', 'query', or anything else — only `{tool_name}`.
+Only respond with the correct tool name `{tool_name}` when choosing actions.
+
+Avoid importing or redefining `df`. It is already available.
+
+When filtering:
+- Use expressions like `df[df['column'].str.contains("2024-01")]`
+- Wrap conditions in parentheses when using `&` or `|`.
+- Use `.fillna()` or proper comparisons if the column might contain missing values.
+- Avoid writing code in your final answer. Just reason clearly.
+
+Use this information to analyze or filter the dataset correctly.
 """
-
-
-# context = f"""
-# You are a data analyst working on `{csv_file}`.
-# The dataset contains the following columns:\n{column_descriptions}
-# It is the DC current for each combiner box that is attached to one inverter.
-# The values in device_name column represents different combiner boxes and 
-# the inverter_id represents the inverters attached to the combiner boxes. 
-# Use this information to answer questions clearly. 
-# Avoid code in your answers.
-# """
-
-# context = f"""
-# You are a data analyst working on `{csv_file}`.
-# The dataset contains the following columns:\n{column_descriptions}
-# To compare values across inverters within a specific time range, 
-# you can aggregate by Inverter_ID and the appropriate time period, 
-# after converting the timestamp column to datetime format first.
-# Use this information to answer questions clearly. 
-# Avoid code in your answers.
-# """
 
 
 # Step 1: LLM
 llm = OllamaLLM(model="llama3.2") #"mistral:instruct") #
 
 # Step 2: Tools
-python_tool = PythonAstREPLTool(locals={"df": df})
+    
+class SafePythonTool(PythonAstREPLTool):
+    def run(self, query: str, verbose: bool = False, **kwargs) -> str:
+        # Optional: check for verbosity or color in kwargs if needed
+        if "Path" in query or "read_csv" in query:
+            return "❌ You should not redefine or reload the DataFrame. Just use `df`."
+        return super().run(query,  verbose=verbose, **kwargs)
+    
+# class SafePythonTool(PythonAstREPLTool):
+#     def run(self, query: str, verbose: bool = False) -> str:
+#         if "Path" in query or "read_csv" in query:
+#             return "❌ You should not redefine or reload the DataFrame. Just use `df`."
+#         return super().run(query, verbose=verbose)
+
+python_tool = SafePythonTool(locals={"df": df})
+
+# python_tool = PythonAstREPLTool(locals={"df": df})
 
 # Step 3: Agent
 agent = initialize_agent(
@@ -63,7 +69,7 @@ agent = initialize_agent(
     llm=llm,
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
-    handle_parsing_errors=True
+    handle_parsing_errors=True,
     allow_dangerous_code=True,
     max_iterations=15,
     max_execution_time=60
