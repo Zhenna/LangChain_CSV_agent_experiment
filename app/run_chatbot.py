@@ -1,4 +1,4 @@
-from agent import agent, context
+from agent import agent_executor, context
 
 # CLI chat loop
 print("\n🤖 CSV Chatbot (Offline CLI Mode)\nType 'exit' to quit.")
@@ -7,7 +7,7 @@ while True:
     if user_input.lower() in {"exit", "quit"}:
         break
     try:
-        response = agent.invoke(context + "\n\n" + user_input)
+        response = agent_executor.invoke(context + "\n\n" + user_input)
         print("Bot:", response)
     except Exception as e:
         print("❌ Error:", str(e))

@@ -173,5 +173,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-data/*
+other_data/*
 delete.ipynb
+convert_df.ipynb
